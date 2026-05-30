@@ -30,7 +30,7 @@ function CallbackInner() {
       .then(async (res) => {
         if (res.success) {
           await login(res.data.access_token, res.data.refresh_token);
-          router.replace("/dashboard");
+          router.replace("/editor");
         } else {
           router.replace("/login");
         }

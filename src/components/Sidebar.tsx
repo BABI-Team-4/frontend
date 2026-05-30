@@ -1,32 +1,129 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { chat, type ChatSession } from "@/lib/api";
+import { sessionDateGroupLabel } from "@/lib/utils";
 import {
-  LayoutDashboard, FileText, GitCompare,
-  BookOpen, Sparkles, LogOut, ChevronDown, Zap, Search,
+  BookOpen,
+  ChevronDown,
+  CreditCard,
+  GitCompare,
+  Loader2,
+  LogOut,
+  PenSquare,
+  Settings2,
+  Search,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const navItems = [
-  { href: "/dashboard",  icon: LayoutDashboard, label: "대시보드" },
-  { href: "/editor",     icon: FileText,         label: "자소서 작성" },
-  { href: "/similarity", icon: GitCompare,       label: "유사도 분석" },
-  { href: "/review",     icon: Sparkles,         label: "첨삭 결과" },
-  { href: "/library",    icon: BookOpen,         label: "라이브러리" },
+  { href: "/editor", icon: PenSquare, label: "자소서 작성" },
+  { href: "/similarity", icon: GitCompare, label: "유사도 분석" },
+  { href: "/library", icon: BookOpen, label: "라이브러리" },
 ];
+
+const PAGE_SIZE = 12;
+
+function groupSessionsByDate(sessions: ChatSession[]) {
+  const groups = new Map<string, ChatSession[]>();
+
+  for (const session of sessions) {
+    const label = sessionDateGroupLabel(session.updated_at);
+    const existing = groups.get(label) ?? [];
+    existing.push(session);
+    groups.set(label, existing);
+  }
+
+  return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, usage, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
 
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const activeSessionId = searchParams.get("session");
   const initials = user?.name ? user.name.slice(0, 1) : "?";
-  const limit = usage?.monthly_analysis_limit ?? 30;
-  const used = usage?.monthly_analysis_used ?? 0;
-  const remaining = limit - used;
-  const resetAt = usage?.reset_at ? new Date(usage.reset_at).toLocaleDateString("ko-KR", { month: "long", day: "numeric" }) : "";
+  const groupedSessions = useMemo(() => groupSessionsByDate(sessions), [sessions]);
+  const hasMore = sessions.length < total;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (user) setLoadingSessions(true);
+      setIsFetchingMore(false);
+      setDebouncedKeyword(keyword.trim());
+      setPage(1);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [keyword, user]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) return;
+
+    let cancelled = false;
+
+    chat.listSessions(page, PAGE_SIZE, debouncedKeyword).then((res) => {
+      if (cancelled) return;
+      if (res.success) {
+        setSessions((prev) => page === 1 ? res.data.items : [...prev, ...res.data.items]);
+        setTotal(res.data.total);
+      }
+      setLoadingSessions(false);
+      setIsFetchingMore(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setLoadingSessions(false);
+      setIsFetchingMore(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, page, debouncedKeyword]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    const root = scrollContainerRef.current;
+    if (!node || !root || loadingSessions || isFetchingMore || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) return;
+        setIsFetchingMore(true);
+        setPage((prev) => prev + 1);
+      },
+      { root, rootMargin: "160px 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, loadingSessions, isFetchingMore]);
 
   const handleLogout = async () => {
     await logout();
@@ -34,12 +131,11 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-[260px] flex flex-col flex-shrink-0 bg-white border-r border-neutral-200">
-      {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-[14px]">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "#2563eb" }}>
-            <Zap className="w-3.5 h-3.5 text-white" />
+    <aside className="hidden lg:flex w-[260px] flex-col shrink-0 bg-white border-r border-neutral-200">
+      <div className="flex items-center justify-between px-4 py-3.5">
+        <Link href="/editor" className="flex items-center gap-2">
+          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md bg-transparent">
+            <Image src="/favicon.png" alt="자소서AI 로고" fill className="object-contain" sizes="28px" priority />
           </div>
           <span className="text-[15px] font-bold text-black">자소서AI</span>
         </Link>
@@ -48,15 +144,8 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="px-3 pb-3">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-neutral-100">
-          <Search className="w-3.5 h-3.5 flex-shrink-0 text-neutral-400" />
-          <input type="text" placeholder="Search" className="flex-1 bg-transparent outline-none text-sm text-black" />
-        </div>
-      </div>
 
-      {/* Nav */}
+
       <nav className="px-3 space-y-0.5 flex-shrink-0">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -79,29 +168,74 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="flex-1" />
-
-      {/* Credits */}
-      <div className="px-3 pb-2">
-        <div className="px-3 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs text-neutral-500">AI 크레딧</span>
-            <span className="text-xs font-mono font-semibold" style={{ color: "#2563eb" }}>{remaining}/{limit}</span>
-          </div>
-          <div className="h-1 rounded-full overflow-hidden bg-neutral-200">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${limit > 0 ? (remaining / limit) * 100 : 0}%`, background: "#2563eb" }}
-            />
-          </div>
-          <p className="text-xs mt-1.5 text-neutral-400">
-            {used}크레딧 사용{resetAt ? ` · ${resetAt} 갱신` : ""}
-          </p>
+      <div className="px-3 pt-3.5 pb-2">
+        <div className="px-1">
+          <span className="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">최근 자소서</span>
+        </div>
+        <div className="mt-2 flex items-center gap-2 rounded-sm border border-neutral-200 bg-neutral-50 px-3 py-2">
+          <Search className="w-3.5 h-3.5 text-neutral-400" />
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="제목, 문항, 본문 검색"
+            className="w-full bg-transparent text-sm text-neutral-700 outline-none placeholder:text-neutral-400"
+          />
         </div>
       </div>
 
-      {/* User */}
-      <div className="px-3 py-3 flex items-center gap-2.5 border-t border-neutral-200">
+      <div className="min-h-0 flex-1 px-2.5 pb-2.5 flex flex-col">
+        <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto pr-1">
+          {loading || (user && loadingSessions && sessions.length === 0) ? (
+            <div className="px-2 py-6 text-sm text-neutral-400">세션 불러오는 중...</div>
+          ) : groupedSessions.length === 0 ? (
+            <div className="px-2 py-6 text-sm text-neutral-400">
+              {debouncedKeyword ? "검색 결과가 없습니다." : "아직 저장된 자소서가 없습니다."}
+            </div>
+          ) : (
+            groupedSessions.map((group) => (
+              <div key={group.label} className="mb-4">
+                <div className="px-2 pb-2 text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">
+                  {group.label}
+                </div>
+                <div className="space-y-0.5">
+                  {group.items.map((session) => {
+                    const isActive = pathname.startsWith("/editor") && activeSessionId === session.session_id;
+                    return (
+                      <button
+                        key={session.session_id}
+                        onClick={() => router.push(`/editor?session=${session.session_id}`)}
+                        className="w-full rounded-lg px-2.5 py-2 text-left transition-colors"
+                        style={{
+                          background: isActive ? "#eff6ff" : "transparent",
+                          border: isActive ? "1px solid #bfdbfe" : "1px solid transparent",
+                        }}
+                      >
+                        <div className="truncate text-sm font-medium text-neutral-800">
+                          {session.title || "제목 없는 자소서"}
+                        </div>
+                        <div className="mt-1 truncate text-xs leading-relaxed text-neutral-400">
+                          {session.last_message || "저장된 미리보기가 없습니다."}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+          {!loadingSessions && hasMore && <div ref={loadMoreRef} className="h-6" />}
+          {isFetchingMore && (
+            <div className="flex items-center justify-center py-3">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-neutral-300" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button
+        onClick={() => setProfileOpen(true)}
+        className="mx-3 mb-3 mt-1 flex items-center gap-2.5 rounded-xl border border-neutral-200 px-3 py-2.5 text-left transition-colors hover:bg-neutral-50"
+      >
         <Avatar className="w-7 h-7 flex-shrink-0">
           {user?.profile_image_url && <AvatarImage src={user.profile_image_url} alt={user.name ?? ""} />}
           <AvatarFallback className="text-xs font-semibold text-white" style={{ fontSize: 11, background: "#2563eb" }}>
@@ -110,18 +244,71 @@ export default function Sidebar() {
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium truncate text-black">{user?.name ?? user?.email ?? "사용자"}</div>
-          <div className="text-xs text-neutral-400">{user?.plan ?? "Free"}</div>
+          <div className="text-xs text-neutral-400">{user?.plan ?? "Free"} 플랜</div>
         </div>
-        {user ? (
-          <button onClick={handleLogout} className="opacity-40 hover:opacity-70 transition-opacity" title="로그아웃">
-            <LogOut className="w-3.5 h-3.5 text-neutral-500" />
-          </button>
-        ) : (
-          <Link href="/login" className="text-xs px-2.5 py-1 rounded-lg font-medium text-white" style={{ background: "#2563eb" }}>
-            로그인
-          </Link>
-        )}
-      </div>
+        <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-neutral-400" />
+      </button>
+
+      <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+        <DialogContent className="max-w-md rounded-3xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
+            <DialogTitle>내 계정</DialogTitle>
+            <DialogDescription>계정 설정과 플랜 정보를 여기서 확인할 수 있습니다.</DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 py-5">
+            <div className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+              <Avatar className="w-10 h-10 flex-shrink-0">
+                {user?.profile_image_url && <AvatarImage src={user.profile_image_url} alt={user.name ?? ""} />}
+                <AvatarFallback className="text-sm font-semibold text-white" style={{ background: "#2563eb" }}>
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-black">{user?.name ?? "사용자"}</div>
+                <div className="truncate text-xs text-neutral-400">{user?.email ?? "이메일 정보 없음"}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <button className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50">
+                <div className="flex items-center gap-3">
+                  <Settings2 className="h-4 w-4 text-neutral-500" />
+                  <div>
+                    <div className="text-sm font-medium text-black">설정</div>
+                    <div className="text-xs text-neutral-400">프로필과 기본 환경을 관리합니다</div>
+                  </div>
+                </div>
+                <span className="text-xs text-neutral-300">준비 중</span>
+              </button>
+
+              <button className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-4 w-4 text-neutral-500" />
+                  <div>
+                    <div className="text-sm font-medium text-black">요금제</div>
+                    <div className="text-xs text-neutral-400">{user?.plan ?? "Free"} 플랜을 사용 중입니다</div>
+                  </div>
+                </div>
+                <span className="text-xs text-neutral-300">준비 중</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center justify-between rounded-2xl border border-red-100 px-4 py-3 text-left transition-colors hover:bg-red-50"
+              >
+                <div className="flex items-center gap-3">
+                  <LogOut className="h-4 w-4 text-red-500" />
+                  <div>
+                    <div className="text-sm font-medium text-red-600">로그아웃</div>
+                    <div className="text-xs text-red-300">현재 세션에서 로그아웃합니다</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }
