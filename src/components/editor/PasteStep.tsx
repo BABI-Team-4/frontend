@@ -39,7 +39,7 @@ export default function PasteStep({ coverLetter, setCoverLetter, onNext, onFileS
             onChange={(e) => setCoverLetter(e.target.value)}
             placeholder="여기에 자소서 내용을 붙여넣으세요..."
             className="border-none rounded-none shadow-none focus-visible:ring-0 px-4 py-4 text-sm leading-relaxed"
-            style={{ height: 260, resize: "none" }}
+            style={{ height: 210, resize: "none" }}
           />
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-neutral-100">
             <div className="flex items-center gap-3">
