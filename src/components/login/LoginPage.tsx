@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -82,7 +81,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <div className="flex flex-col md:flex-row min-h-[var(--app-viewport-height)]">
       {/* Left: floating balls */}
       <motion.div
         className="relative overflow-hidden md:w-1/2 min-h-[220px] shrink-0"
@@ -161,7 +160,7 @@ export default function LoginPage() {
               {isSignup ? "회원가입" : "로그인"}
             </h2>
             <p className="text-sm text-[#8892a4]">
-              {isSignup ? "새 계정을 만들어 시작하세요." : "AI 자소서 첨삭 서비스에 오신 것을 환영합니다."}
+              {isSignup ? "새 계정을 만들어 시작하세요." : "자소서 첨삭 서비스에 오신 것을 환영합니다."}
             </p>
           </div>
 

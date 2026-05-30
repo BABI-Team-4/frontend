@@ -51,17 +51,17 @@ export default function SessionsPage() {
   const PAGE_SIZE = 20;
 
   useEffect(() => {
+    async function loadSessions(p: number) {
+      const res = await chat.listSessions(p, PAGE_SIZE);
+      if (res.success) {
+        setSessions(res.data.items);
+        setTotal(res.data.total);
+      }
+    }
+
     if (!loading && !user) { router.replace("/login"); return; }
     if (user) loadSessions(page);
   }, [user, loading, page, router]);
-
-  async function loadSessions(p: number) {
-    const res = await chat.listSessions(p, PAGE_SIZE);
-    if (res.success) {
-      setSessions(res.data.items);
-      setTotal(res.data.total);
-    }
-  }
 
   async function handleRename() {
     if (!renameTarget || !renameTitle.trim()) return;
@@ -88,14 +88,14 @@ export default function SessionsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-[var(--app-viewport-height)] items-center justify-center">
         <p className="text-sm text-neutral-500">로딩 중...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden flex-col lg:flex-row">
+    <div className="flex h-[var(--app-viewport-height)] overflow-hidden flex-col lg:flex-row">
       <MobileHeader />
       <Sidebar />
       <main className="flex-1 overflow-y-auto bg-neutral-50">

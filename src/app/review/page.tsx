@@ -17,10 +17,12 @@ function ReviewInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
+  const analysisParam = searchParams.get("analysis");
+  const sessionParam = searchParams.get("session");
 
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [analysisId, setAnalysisId] = useState<string | null>(() => analysisParam);
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [status, setStatus] = useState<string>("idle");
+  const [status, setStatus] = useState<string>(() => analysisParam ? "polling" : "idle");
   const [progress, setProgress] = useState(0);
   const [scoreVisible, setScoreVisible] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
@@ -28,16 +30,13 @@ function ReviewInner() {
 
   useEffect(() => {
     if (!user || loading) return;
-    const sid = searchParams.get("session");
-    const aid = searchParams.get("analysis");
-    if (aid) { setAnalysisId(aid); setStatus("polling"); }
-    else if (sid) {
-      analysis.create(sid).then((res) => {
+    if (!analysisParam && sessionParam) {
+      analysis.create(sessionParam).then((res) => {
         if (res.success) { setAnalysisId(res.data.analysis_id); setStatus("polling"); }
         else setStatus("error");
       });
     }
-  }, [user, loading, searchParams]);
+  }, [user, loading, analysisParam, sessionParam]);
 
   useEffect(() => {
     if (status !== "polling" || !analysisId) return;
@@ -84,7 +83,7 @@ function ReviewInner() {
 
   if (status === "polling" || status === "idle") {
     return (
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-[var(--app-viewport-height)] overflow-hidden">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center bg-neutral-50">
           <motion.div
@@ -118,7 +117,7 @@ function ReviewInner() {
 
   if (status === "error" || !result) {
     return (
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-[var(--app-viewport-height)] overflow-hidden">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center bg-neutral-50">
           <div className="text-center">
@@ -145,7 +144,7 @@ function ReviewInner() {
   const grade = (v: number) => v >= 90 ? "A+" : v >= 80 ? "A" : v >= 70 ? "B+" : v >= 60 ? "B" : "C";
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[var(--app-viewport-height)] overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto bg-neutral-50">
         <header className="sticky top-0 z-10 px-8 py-4 border-b flex items-center justify-between bg-white border-neutral-200">

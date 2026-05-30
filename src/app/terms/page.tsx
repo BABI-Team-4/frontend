@@ -52,7 +52,7 @@ const SECTIONS = [
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen" style={{ background: "oklch(0.98 0.003 247)", fontFamily: "'Pretendard Variable', Pretendard, sans-serif" }}>
+    <div className="min-h-[var(--app-viewport-height)]" style={{ background: "oklch(0.98 0.003 247)", fontFamily: "'Pretendard Variable', Pretendard, sans-serif" }}>
       {/* Header */}
       <header className="sticky top-0 z-10 border-b px-8 py-4 flex items-center justify-between" style={{ background: "white", borderColor: "oklch(0.9 0.01 264)" }}>
         <div className="flex items-center gap-4">

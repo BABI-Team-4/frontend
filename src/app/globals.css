@@ -132,6 +132,9 @@
   }
   html {
     @apply font-sans;
+    --app-zoom: 0.95;
+    --app-viewport-height: calc(100vh / var(--app-zoom));
+    zoom: var(--app-zoom);
   }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }

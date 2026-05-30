@@ -38,10 +38,10 @@ export default function KakaoCallback() {
       .catch(() => {
         router.replace("/login?error=oauth_failed");
       });
-  }, []);
+  }, [login, router, searchParams]);
 
   return (
-    <div className="h-screen flex items-center justify-center bg-white">
+    <div className="h-[var(--app-viewport-height)] flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-4">
         <span className="w-8 h-8 border-2 border-neutral-200 border-t-neutral-800 rounded-full animate-spin" />
         <p className="text-sm text-neutral-400">카카오 로그인 중...</p>

@@ -336,8 +336,6 @@ interface ResultViewProps {
   adviseResults: (AdviseResult | null | "failed")[];
   company: string;
   position: string;
-  docTitle: string;
-  sessionId: string | null;
   onBack: () => void;
   onRetry?: (idx: number) => void;
 }
@@ -347,8 +345,6 @@ export default function ResultView({
   adviseResults,
   company,
   position,
-  docTitle,
-  sessionId,
   onBack,
   onRetry,
 }: ResultViewProps) {
@@ -415,8 +411,8 @@ export default function ResultView({
             <ArrowLeft className="w-3.5 h-3.5 text-neutral-500" />
           </button>
           <div>
-            <h1 className="text-sm font-semibold text-black leading-tight">{docTitle}</h1>
-            <p className="text-xs text-neutral-400">{company}{position ? ` · ${position}` : ""}</p>
+            <h1 className="text-sm font-semibold text-black leading-tight">{company || "새 자소서"}</h1>
+            {position && <p className="text-xs text-neutral-400">{position}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2">

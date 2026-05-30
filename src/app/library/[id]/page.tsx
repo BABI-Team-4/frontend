@@ -66,21 +66,22 @@ export default function LibraryDetailPage() {
   const params = useParams();
   const router = useRouter();
   const essayId = Number(params.id);
+  const invalidEssayId = Number.isNaN(essayId);
 
   const [data, setData] = useState<LibraryEssayDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!invalidEssayId);
 
   useEffect(() => {
-    if (isNaN(essayId)) { setLoading(false); return; }
+    if (invalidEssayId) return;
     library.get(essayId).then((res) => {
       if (res.success) setData(res.data);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [essayId]);
+  }, [essayId, invalidEssayId]);
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-[var(--app-viewport-height)] items-center justify-center">
         <Loader2 className="w-5 h-5 text-neutral-300 animate-spin" />
       </div>
     );
@@ -88,7 +89,7 @@ export default function LibraryDetailPage() {
 
   if (!data) {
     return (
-      <div className="flex h-screen items-center justify-center flex-col gap-3">
+      <div className="flex h-[var(--app-viewport-height)] items-center justify-center flex-col gap-3">
         <p className="text-sm text-neutral-500">자소서를 찾을 수 없습니다</p>
         <button onClick={() => router.push("/library")} className="text-xs text-blue-500 hover:underline">
           목록으로 돌아가기
@@ -98,7 +99,7 @@ export default function LibraryDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-[var(--app-viewport-height)] bg-neutral-50">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-neutral-200">
         <div className="max-w-[860px] mx-auto px-4 md:px-6 py-3 flex items-center gap-3">

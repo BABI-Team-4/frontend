@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-[var(--app-viewport-height)] items-center justify-center">
         <p className="text-sm text-neutral-500">로딩 중...</p>
       </div>
     );
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const recLimit = usage?.monthly_recommendation_limit ?? 0;
 
   return (
-    <div className="flex h-screen overflow-hidden flex-col lg:flex-row">
+    <div className="flex h-[var(--app-viewport-height)] overflow-hidden flex-col lg:flex-row">
       <MobileHeader />
       <Sidebar />
       <main className="flex-1 overflow-y-auto bg-neutral-50">

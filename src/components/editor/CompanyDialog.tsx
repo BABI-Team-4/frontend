@@ -15,11 +15,10 @@ interface CompanyDialogProps {
   setPosition: (v: string) => void;
   onClose: () => void;
   onStart: () => void;
-  onTitleChange: (title: string) => void;
 }
 
 export default function CompanyDialog({
-  open, company, setCompany, position, setPosition, onClose, onStart, onTitleChange,
+  open, company, setCompany, position, setPosition, onClose, onStart,
 }: CompanyDialogProps) {
   const companyRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -28,8 +27,6 @@ export default function CompanyDialog({
 
   const handleStart = () => {
     if (!company.trim()) return;
-    const title = position.trim() ? `${company.trim()} · ${position.trim()}` : company.trim();
-    onTitleChange(title);
     onStart();
   };
 

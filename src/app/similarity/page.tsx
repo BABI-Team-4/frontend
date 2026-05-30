@@ -80,7 +80,8 @@ function SimilarityInner() {
   const toggleExpand = (i: number) => {
     setExpandedSet((prev) => {
       const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
       return next;
     });
   };
@@ -88,7 +89,7 @@ function SimilarityInner() {
   if (loading) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white flex-col lg:flex-row">
+    <div className="flex h-[var(--app-viewport-height)] overflow-hidden bg-white flex-col lg:flex-row">
       <MobileHeader />
       <Sidebar />
 

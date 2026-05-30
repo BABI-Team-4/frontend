@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { chat, getAccessToken, type ChatSession } from "@/lib/api";
-import { makeDefaultTitle } from "@/lib/utils";
+import { chat, getAccessToken } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 
@@ -37,10 +36,10 @@ export default function EditorInner() {
     [router, searchParams]
   );
 
-  const [docTitle, setDocTitle] = useState(makeDefaultTitle);
   const [coverLetter, setCoverLetter] = useState("");
   const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [extractingFile, setExtractingFile] = useState(false);
   const [company, setCompany] = useState("");
   const [position, setPosition] = useState("");
   const [adviseResults, setAdviseResults] = useState<(AdviseResult | null | "failed")[]>([]);
@@ -66,7 +65,6 @@ export default function EditorInner() {
         if (res.success) {
           setSessionId(res.data.session_id);
           setCompany(res.data.context.target_company_name ?? "");
-          setDocTitle(res.data.title || makeDefaultTitle());
           // 에세이 컨텍스트에서 전체 문항 복원
           const ctx = res.data.context;
           let allQuestions: ParsedQuestion[] = [];
@@ -140,6 +138,26 @@ export default function EditorInner() {
     setStep("company");
   };
 
+  const extractFromFile = async (file: File) => {
+    setExtractingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/extract-essay", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setCoverLetter(data.data.text);
+      }
+    } finally {
+      setExtractingFile(false);
+    }
+  };
+
   /* ── 첨삭 시작 ── */
   const startAdvise = async () => {
     if (!company.trim()) return;
@@ -154,8 +172,7 @@ export default function EditorInner() {
 
     const sessionTitle = position.trim()
       ? `${company.trim()} · ${position.trim()}`
-      : company.trim();
-    setDocTitle(sessionTitle);
+      : company.trim() || "새 자소서";
 
     let createdSessionId: string | null = null;
     const sessionRes = await chat.createSession(sessionTitle);
@@ -250,51 +267,7 @@ export default function EditorInner() {
     }
   };
 
-  const loadSession = async (s: ChatSession) => {
-    const res = await chat.getSession(s.session_id);
-    if (res.success) {
-      setSessionId(res.data.session_id);
-      setCompany(res.data.context.target_company_name ?? s.title.split(" ")[0]);
-      setDocTitle(res.data.title || s.title || makeDefaultTitle());
-      const ctx = res.data.context;
-      let allQuestions: ParsedQuestion[] = [];
-      if (ctx.essay_answer) {
-        const parts = ctx.essay_answer.split(/\n\n(?=\[)/);
-        allQuestions = parts.map((part) => {
-          const match = part.match(/^\[(.+?)\]\n([\s\S]*)$/);
-          return match
-            ? { question: match[1], answer: match[2] }
-            : { question: ctx.essay_question ?? "자기소개서", answer: part };
-        });
-      }
-
-      const advRes = await chat.getAdviseResults(res.data.session_id);
-      const savedMap = new Map<number, AdviseResult>();
-      if (advRes.success) {
-        for (const item of advRes.data.items) {
-          savedMap.set(item.question_index, item.result as AdviseResult);
-          if (allQuestions.length <= item.question_index) {
-            allQuestions.push({
-              question: item.question,
-              answer: (item.result as { draft?: string })?.draft ?? "",
-            });
-          }
-        }
-      }
-
-      if (allQuestions.length > 0) {
-        setParsedQuestions(allQuestions);
-        const results: (AdviseResult | null | "failed")[] = allQuestions.map((_, i) =>
-          savedMap.has(i) ? savedMap.get(i)! : "failed"
-        );
-        setAdviseResults(results);
-      }
-      setStep("result");
-    }
-  };
-
   const resetToHome = () => {
-    setDocTitle(makeDefaultTitle());
     setCoverLetter("");
     setParsedQuestions([]);
     setAdviseResults([]);
@@ -316,24 +289,22 @@ export default function EditorInner() {
         textarea{resize:none;}
       `}</style>
 
-      <div className="flex h-screen overflow-hidden bg-white flex-col lg:flex-row">
+      <div className="flex h-[var(--app-viewport-height)] overflow-hidden bg-white flex-col lg:flex-row">
         <MobileHeader />
         <Sidebar />
         <div className="flex flex-col flex-1 min-w-0 relative">
           {step === "paste" && (
             <PasteStep
-              docTitle={docTitle}
-              setDocTitle={setDocTitle}
               coverLetter={coverLetter}
               setCoverLetter={setCoverLetter}
+              onFileSelect={extractFromFile}
+              extractingFile={extractingFile}
               onNext={goToSplit}
             />
           )}
 
           {(step === "split" || step === "company") && (
             <SplitStep
-              docTitle={docTitle}
-              setDocTitle={setDocTitle}
               parsedQuestions={parsedQuestions}
               setParsedQuestions={setParsedQuestions}
               isParsing={isParsing}
@@ -350,7 +321,6 @@ export default function EditorInner() {
             setPosition={setPosition}
             onClose={() => setStep("split")}
             onStart={startAdvise}
-            onTitleChange={setDocTitle}
           />
 
           {step === "result" && (
@@ -359,8 +329,6 @@ export default function EditorInner() {
               adviseResults={adviseResults}
               company={company}
               position={position}
-              docTitle={docTitle}
-              sessionId={sessionId}
               onBack={resetToHome}
               onRetry={retryAdvise}
             />

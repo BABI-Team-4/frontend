@@ -16,7 +16,6 @@ import {
   LogOut,
   PenSquare,
   Settings2,
-  Search,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -57,8 +56,6 @@ export default function Sidebar() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [keyword, setKeyword] = useState("");
-  const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -71,23 +68,12 @@ export default function Sidebar() {
   const hasMore = sessions.length < total;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (user) setLoadingSessions(true);
-      setIsFetchingMore(false);
-      setDebouncedKeyword(keyword.trim());
-      setPage(1);
-    }, 250);
-
-    return () => window.clearTimeout(timer);
-  }, [keyword, user]);
-
-  useEffect(() => {
     if (loading) return;
     if (!user) return;
 
     let cancelled = false;
 
-    chat.listSessions(page, PAGE_SIZE, debouncedKeyword).then((res) => {
+    chat.listSessions(page, PAGE_SIZE).then((res) => {
       if (cancelled) return;
       if (res.success) {
         setSessions((prev) => page === 1 ? res.data.items : [...prev, ...res.data.items]);
@@ -104,7 +90,7 @@ export default function Sidebar() {
     return () => {
       cancelled = true;
     };
-  }, [user, loading, page, debouncedKeyword]);
+  }, [user, loading, page]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -146,7 +132,7 @@ export default function Sidebar() {
 
 
 
-      <nav className="px-3 space-y-0.5 flex-shrink-0">
+      <nav className="px-2 space-y-0.5 shrink-0">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href === "/editor" && pathname.startsWith("/editor"));
@@ -154,32 +140,23 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2 text-sm transition-colors"
               style={{
                 background: isActive ? "#eff6ff" : "transparent",
                 color: isActive ? "#2563eb" : "#737373",
                 fontWeight: isActive ? 600 : 400,
               }}
             >
-              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+              <Icon className="w-3.5 h-3.5 shrink-0" />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 pt-3.5 pb-2">
+      <div className="px-3 pt-3.5 pb-2 border-t border-neutral-200">
         <div className="px-1">
           <span className="text-[11px] font-semibold tracking-wider text-neutral-400 uppercase">최근 자소서</span>
-        </div>
-        <div className="mt-2 flex items-center gap-2 rounded-sm border border-neutral-200 bg-neutral-50 px-3 py-2">
-          <Search className="w-3.5 h-3.5 text-neutral-400" />
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="제목, 문항, 본문 검색"
-            className="w-full bg-transparent text-sm text-neutral-700 outline-none placeholder:text-neutral-400"
-          />
         </div>
       </div>
 
@@ -189,7 +166,7 @@ export default function Sidebar() {
             <div className="px-2 py-6 text-sm text-neutral-400">세션 불러오는 중...</div>
           ) : groupedSessions.length === 0 ? (
             <div className="px-2 py-6 text-sm text-neutral-400">
-              {debouncedKeyword ? "검색 결과가 없습니다." : "아직 저장된 자소서가 없습니다."}
+              아직 저장된 자소서가 없습니다.
             </div>
           ) : (
             groupedSessions.map((group) => (
@@ -232,22 +209,24 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <button
-        onClick={() => setProfileOpen(true)}
-        className="mx-3 mb-3 mt-1 flex items-center gap-2.5 rounded-xl border border-neutral-200 px-3 py-2.5 text-left transition-colors hover:bg-neutral-50"
-      >
-        <Avatar className="w-7 h-7 flex-shrink-0">
-          {user?.profile_image_url && <AvatarImage src={user.profile_image_url} alt={user.name ?? ""} />}
-          <AvatarFallback className="text-xs font-semibold text-white" style={{ fontSize: 11, background: "#2563eb" }}>
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate text-black">{user?.name ?? user?.email ?? "사용자"}</div>
-          <div className="text-xs text-neutral-400">{user?.plan ?? "Free"} 플랜</div>
-        </div>
-        <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-neutral-400" />
-      </button>
+      <div className="border-t border-neutral-200">
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="flex w-full items-center gap-2.5 px-3 py-3 text-left transition-colors hover:bg-neutral-50"
+        >
+          <Avatar className="w-7 h-7 flex-shrink-0">
+            {user?.profile_image_url && <AvatarImage src={user.profile_image_url} alt={user.name ?? ""} />}
+            <AvatarFallback className="text-xs font-semibold text-white" style={{ fontSize: 11, background: "#2563eb" }}>
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate text-black">{user?.name ?? user?.email ?? "사용자"}</div>
+            <div className="text-xs text-neutral-400">{user?.plan ?? "Free"} 플랜</div>
+          </div>
+          <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-neutral-400" />
+        </button>
+      </div>
 
       <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
         <DialogContent className="max-w-md rounded-3xl p-0 overflow-hidden">
@@ -271,7 +250,13 @@ export default function Sidebar() {
             </div>
 
             <div className="mt-4 space-y-2">
-              <button className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50">
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
+                  router.push("/settings");
+                }}
+                className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50"
+              >
                 <div className="flex items-center gap-3">
                   <Settings2 className="h-4 w-4 text-neutral-500" />
                   <div>
@@ -279,10 +264,15 @@ export default function Sidebar() {
                     <div className="text-xs text-neutral-400">프로필과 기본 환경을 관리합니다</div>
                   </div>
                 </div>
-                <span className="text-xs text-neutral-300">준비 중</span>
               </button>
 
-              <button className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50">
+              <button
+                onClick={() => {
+                  setProfileOpen(false);
+                  router.push("/billing");
+                }}
+                className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition-colors hover:bg-neutral-50"
+              >
                 <div className="flex items-center gap-3">
                   <CreditCard className="h-4 w-4 text-neutral-500" />
                   <div>
@@ -290,7 +280,6 @@ export default function Sidebar() {
                     <div className="text-xs text-neutral-400">{user?.plan ?? "Free"} 플랜을 사용 중입니다</div>
                   </div>
                 </div>
-                <span className="text-xs text-neutral-300">준비 중</span>
               </button>
 
               <button

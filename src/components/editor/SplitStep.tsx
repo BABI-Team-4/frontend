@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,6 @@ interface ParsedQuestion {
 }
 
 interface SplitStepProps {
-  docTitle: string;
-  setDocTitle: (v: string) => void;
   parsedQuestions: ParsedQuestion[];
   setParsedQuestions: (v: ParsedQuestion[]) => void;
   isParsing: boolean;
@@ -21,7 +19,7 @@ interface SplitStepProps {
 }
 
 export default function SplitStep({
-  docTitle, setDocTitle, parsedQuestions, setParsedQuestions, isParsing, onBack, onNext,
+  parsedQuestions, setParsedQuestions, isParsing, onBack, onNext,
 }: SplitStepProps) {
   const updateQuestion = (i: number, patch: Partial<ParsedQuestion>) => {
     const u = [...parsedQuestions];
@@ -39,14 +37,6 @@ export default function SplitStep({
           >
             <ArrowLeft className="w-3.5 h-3.5 text-neutral-500" />
           </button>
-          <div className="flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
-            <Input
-              value={docTitle}
-              onChange={(e) => setDocTitle(e.target.value)}
-              className="h-auto border-none p-0 text-sm font-semibold shadow-none focus-visible:ring-0 min-w-[80px]"
-            />
-          </div>
         </div>
         {!isParsing && (
           <Button onClick={onNext} size="sm" className="rounded-full gap-1.5">

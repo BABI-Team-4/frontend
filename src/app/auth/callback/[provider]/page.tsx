@@ -41,7 +41,7 @@ function CallbackInner() {
   }, [provider, searchParams, router, login]);
 
   return (
-    <div className="flex h-screen items-center justify-center" style={{ background: "oklch(0.97 0.003 247)" }}>
+    <div className="flex h-[var(--app-viewport-height)] items-center justify-center" style={{ background: "oklch(0.97 0.003 247)" }}>
       <div className="text-center">
         <div
           className="w-10 h-10 mx-auto mb-4 rounded-xl flex items-center justify-center animate-pulse"

@@ -129,7 +129,7 @@ export default function LibraryPage() {
   const activeFilterCount = [qOrgType, qHireType, qYear, qSeason].filter(Boolean).length;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white flex-col lg:flex-row">
+    <div className="flex h-[var(--app-viewport-height)] overflow-hidden bg-white flex-col lg:flex-row">
       <MobileHeader />
       <Sidebar />
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
