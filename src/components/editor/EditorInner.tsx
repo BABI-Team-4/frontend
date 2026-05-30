@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { chat, getAccessToken } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
+import EditorOnboardingModal from "@/components/onboarding/EditorOnboardingModal";
 
 import PasteStep from "./PasteStep";
 import SplitStep from "./SplitStep";
@@ -289,10 +290,12 @@ export default function EditorInner() {
         textarea{resize:none;}
       `}</style>
 
-      <div className="flex h-[var(--app-viewport-height)] overflow-hidden bg-white flex-col lg:flex-row">
+      <div className="flex h-[var(--app-viewport-height)] overflow-hidden bg-[linear-gradient(135deg,white_40%,rgb(250,245,255)_50%,white_60%)] flex-col lg:flex-row">
         <MobileHeader />
         <Sidebar />
         <div className="flex flex-col flex-1 min-w-0 relative">
+          {step === "paste" && <EditorOnboardingModal />}
+
           {step === "paste" && (
             <PasteStep
               coverLetter={coverLetter}
