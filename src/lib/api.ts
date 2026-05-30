@@ -1,10 +1,16 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-
-const PREFIX = "/api/v1";
+const IS_BROWSER = typeof window !== "undefined";
 
 function url(path: string) {
-  return `${API_BASE}${PREFIX}${path.startsWith("/") ? path : `/${path}`}`;
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+
+  // In the browser, always use the Next.js proxy to avoid CORS issues (e.g. ngrok)
+  if (IS_BROWSER) {
+    return `/api/proxy/${cleanPath}`;
+  }
+
+  // Server-side: call the backend directly
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  return `${base}/api/v1/${cleanPath}`;
 }
 
 /* ─── Token helpers ─── */
@@ -38,7 +44,7 @@ async function apiFetch<T = unknown>(
   const token = getAccessToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(opts.headers as Record<string, string>),
+...(opts.headers as Record<string, string>),
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -149,7 +155,7 @@ export const companies = {
     apiFetch(`/companies/${companyId}/job-postings${jobRoleId ? `?job_role_id=${jobRoleId}` : ""}`),
 };
 
-/* ─── Chat ─── */
+/* ─── Essays ─── */
 
 export interface ChatSession {
   session_id: string;
@@ -160,7 +166,7 @@ export interface ChatSession {
   updated_at: string;
 }
 
-export interface ChatContext {
+export interface EssayContext {
   target_company_id: number | null;
   target_company_name?: string;
   target_job_role_id: number | null;
@@ -171,53 +177,54 @@ export interface ChatContext {
   ready_for_analysis: boolean;
 }
 
-export interface ChatMessage {
-  message_id: number;
-  role: string;
-  content: string;
-  message_type: string;
-  required_fields?: string[];
-  actions?: { type: string; label: string }[];
-  created_at?: string;
-}
+// backward-compat alias
+export type ChatContext = EssayContext;
 
 export const chat = {
-  createSession: (initialMessage = "") =>
-    apiFetch<{ session_id: string; status: string; assistant_message: ChatMessage; context: ChatContext }>(
-      "/chat/sessions",
-      { method: "POST", body: JSON.stringify({ initial_message: initialMessage }) },
+  createSession: (title = "") =>
+    apiFetch<{ session_id: string; status: string; context: EssayContext }>(
+      "/essays",
+      { method: "POST", body: JSON.stringify({ title }) },
     ),
 
-  listSessions: (page = 1, limit = 20) =>
+  listSessions: (page = 1, limit = 20, keyword = "") =>
     apiFetch<{ items: ChatSession[]; page: number; limit: number; total: number }>(
-      `/chat/sessions?page=${page}&limit=${limit}`,
+      `/essays?page=${page}&limit=${limit}${keyword ? `&keyword=${encodeURIComponent(keyword)}` : ""}`,
     ),
 
   getSession: (sessionId: string) =>
-    apiFetch<{ session_id: string; title: string; status: string; context: ChatContext; messages: ChatMessage[] }>(
-      `/chat/sessions/${sessionId}`,
-    ),
-
-  sendMessage: (sessionId: string, content: string, messageType = "text") =>
-    apiFetch<{ user_message: ChatMessage; assistant_message: ChatMessage; context: ChatContext }>(
-      `/chat/sessions/${sessionId}/messages`,
-      { method: "POST", body: JSON.stringify({ content, message_type: messageType }) },
+    apiFetch<{ session_id: string; title: string; status: string; context: EssayContext; messages: [] }>(
+      `/essays/${sessionId}`,
     ),
 
   submitEssay: (sessionId: string, essayQuestion: string, essayAnswer: string) =>
-    apiFetch(`/chat/sessions/${sessionId}/essay`, {
+    apiFetch(`/essays/${sessionId}/essay`, {
       method: "POST",
       body: JSON.stringify({ essay_question: essayQuestion, essay_answer: essayAnswer }),
     }),
 
-  updateContext: (sessionId: string, data: { target_company_id?: number; target_job_role_id?: number; job_posting_id?: number }) =>
-    apiFetch(`/chat/sessions/${sessionId}/context`, {
+  closeSession: (sessionId: string) =>
+    apiFetch(`/essays/${sessionId}/close`, { method: "PATCH" }),
+
+  renameSession: (sessionId: string, title: string) =>
+    apiFetch(`/essays/${sessionId}/title`, {
       method: "PATCH",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ title }),
     }),
 
-  closeSession: (sessionId: string) =>
-    apiFetch(`/chat/sessions/${sessionId}/close`, { method: "PATCH" }),
+  deleteSession: (sessionId: string) =>
+    apiFetch(`/essays/${sessionId}`, { method: "DELETE" }),
+
+  saveAdviseResult: (sessionId: string, questionIndex: number, question: string, result: unknown) =>
+    apiFetch(`/essays/${sessionId}/advise-result`, {
+      method: "POST",
+      body: JSON.stringify({ question_index: questionIndex, question, result }),
+    }),
+
+  getAdviseResults: (sessionId: string) =>
+    apiFetch<{ items: { question_index: number; question: string; result: unknown; created_at: string }[] }>(
+      `/essays/${sessionId}/advise-results`,
+    ),
 };
 
 /* ─── Analysis ─── */
@@ -259,7 +266,7 @@ export interface AnalysisResult {
 export const analysis = {
   create: (sessionId: string, analysisType = "full") =>
     apiFetch<{ analysis_id: string; session_id: string; status: string }>(
-      `/chat/sessions/${sessionId}/analysis`,
+      `/essays/${sessionId}/analysis`,
       { method: "POST", body: JSON.stringify({ analysis_type: analysisType }) },
     ),
 
@@ -279,7 +286,7 @@ export const analysis = {
 
 export const recommendations = {
   create: (sessionId: string, limit = 10) =>
-    apiFetch(`/chat/sessions/${sessionId}/recommendations`, {
+    apiFetch(`/essays/${sessionId}/recommendations`, {
       method: "POST",
       body: JSON.stringify({ limit }),
     }),
@@ -292,4 +299,71 @@ export const recommendations = {
 
 export const plans = {
   list: () => apiFetch("/plans"),
+};
+
+/* ─── Library (합격 자소서) ─── */
+
+export interface LibraryTags {
+  companies: string[];
+  org_types: string[];
+  hire_types: string[];
+  seasons: string[];
+  years: number[];
+}
+
+export interface LibraryEssay {
+  essay_id: number;
+  company: string;
+  org_type: string;
+  role: string;
+  hire_type: string;
+  year: number;
+  season: string;
+  university: string;
+  major: string;
+  source: string;
+  qna_count: number;
+}
+
+export interface LibraryQnA {
+  qna_id: number;
+  question: string;
+  answer: string;
+  question_type: string;
+  char_count: number;
+}
+
+export interface LibraryEssayDetail {
+  essay_id: number;
+  company: string;
+  org_type: string;
+  role: string;
+  hire_type: string;
+  year: number;
+  season: string;
+  university: string;
+  major: string;
+  source: string;
+  qna: LibraryQnA[];
+}
+
+export const library = {
+  tags: () => apiFetch<LibraryTags>("/library/tags"),
+
+  list: (params?: { page?: number; limit?: number; company?: string; role?: string; org_type?: string; hire_type?: string; year?: number; season?: string; keyword?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set("page", String(params.page));
+    if (params?.limit) sp.set("limit", String(params.limit));
+    if (params?.company) sp.set("company", params.company);
+    if (params?.role) sp.set("role", params.role);
+    if (params?.org_type) sp.set("org_type", params.org_type);
+    if (params?.hire_type) sp.set("hire_type", params.hire_type);
+    if (params?.year) sp.set("year", String(params.year));
+    if (params?.season) sp.set("season", params.season);
+    if (params?.keyword) sp.set("keyword", params.keyword);
+    return apiFetch<{ items: LibraryEssay[]; page: number; limit: number; total: number }>(`/library?${sp}`);
+  },
+
+  get: (essayId: number) =>
+    apiFetch<LibraryEssayDetail>(`/library/${essayId}`),
 };

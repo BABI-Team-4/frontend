@@ -1,12 +1,10 @@
-"use client";
-
 import { Suspense } from "react";
-import LibraryInner from "@/components/library/LibraryPage";
+import KakaoCallback from "./KakaoCallback";
 
 export default function Page() {
   return (
     <Suspense>
-      <LibraryInner />
+      <KakaoCallback />
     </Suspense>
   );
 }

@@ -209,7 +209,7 @@ function ReviewInner() {
                   <div key={score.label}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs font-medium text-neutral-600">{score.label}</span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-nowrap">
                         <span className="text-xs font-bold text-black">{score.value}점</span>
                         <span className="text-xs px-1.5 py-0.5 rounded-full font-bold bg-neutral-100 text-neutral-700">{grade(score.value)}</span>
                       </div>
