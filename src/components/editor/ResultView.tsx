@@ -304,34 +304,52 @@ function LinkedInSection({ company, position }: { company: string; position: str
 
   return (
     <div className="border border-neutral-200 rounded-lg bg-white overflow-hidden">
-      <div className="px-3 pt-2.5 pb-2">
+      <div className="px-3 pt-2.5 pb-2.5">
         <div className="flex items-center gap-1.5 mb-2">
-          <ExternalLink className="w-3.5 h-3.5 text-[#0A66C2]" />
+          <div className="w-4 h-4 rounded bg-[#0A66C2] flex items-center justify-center flex-shrink-0">
+            <span className="text-[8px] font-bold text-white">in</span>
+          </div>
           <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">현업자 프로필</p>
         </div>
         {loading ? (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="w-3.5 h-3.5 text-neutral-300 animate-spin" />
           </div>
-        ) : error ? (
-          <p className="text-[11px] text-neutral-400 py-2">프로필을 불러올 수 없습니다</p>
-        ) : profiles.length === 0 ? (
+        ) : error || profiles.length === 0 ? (
           <p className="text-[11px] text-neutral-400 py-2">검색 결과가 없습니다</p>
         ) : (
-          <div className="space-y-2">
-            {profiles.map((p, i) => (
-              <a
-                key={i}
-                href={p.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-md px-1 py-1.5 -mx-1 hover:bg-neutral-50 transition-colors"
-              >
-                <p className="text-[11px] font-semibold text-neutral-700 truncate">{p.title.replace(/ \| LinkedIn$/, "")}</p>
-                <p className="text-[10px] text-neutral-400 line-clamp-2">{p.snippet}</p>
-              </a>
-            ))}
-          </div>
+          <>
+            <div className="space-y-1">
+              {profiles.map((p, i) => (
+                <a
+                  key={i}
+                  href={p.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 rounded-md px-2 py-2 -mx-1 hover:bg-neutral-50 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <span className="text-[11px] font-bold text-neutral-500">
+                      {p.title.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-neutral-700 truncate">{p.title}</p>
+                    <p className="text-[10px] text-neutral-400 line-clamp-1">{p.snippet}</p>
+                  </div>
+                  <ExternalLink className="w-3 h-3 text-neutral-300 flex-shrink-0" />
+                </a>
+              ))}
+            </div>
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent(`site:linkedin.com/in ${company} ${position}`.trim())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center text-[11px] font-medium text-[#0A66C2] hover:text-[#004182] pt-2 mt-1 border-t border-neutral-100 transition-colors"
+            >
+              더보기
+            </a>
+          </>
         )}
       </div>
     </div>

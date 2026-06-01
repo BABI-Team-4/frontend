@@ -193,10 +193,10 @@ export interface EssayContext {
 export type ChatContext = EssayContext;
 
 export const chat = {
-  createSession: (title = "") =>
+  createSession: (title = "", company = "", position = "") =>
     apiFetch<{ session_id: string; status: string; context: EssayContext }>(
       "/essays",
-      { method: "POST", body: JSON.stringify({ title }) },
+      { method: "POST", body: JSON.stringify({ title, company, position }) },
     ),
 
   listSessions: (page = 1, limit = 20, keyword = "") =>
