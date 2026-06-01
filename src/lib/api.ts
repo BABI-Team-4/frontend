@@ -105,6 +105,18 @@ export const auth = {
       "/auth/dev-login",
       { method: "POST", body: JSON.stringify({ email }) },
     ),
+
+  signup: (email: string, password: string, name?: string) =>
+    apiFetch<{ access_token: string; refresh_token: string; user: UserData }>(
+      "/auth/signup",
+      { method: "POST", body: JSON.stringify({ email, password, name: name || "" }) },
+    ),
+
+  emailLogin: (email: string, password: string) =>
+    apiFetch<{ access_token: string; refresh_token: string; user: UserData }>(
+      "/auth/login",
+      { method: "POST", body: JSON.stringify({ email, password }) },
+    ),
 };
 
 /* ─── Users ─── */

@@ -180,11 +180,11 @@
 .dot-2 { animation: pulseDot 1.4s ease-in-out infinite 0.22s; }
 .dot-3 { animation: pulseDot 1.4s ease-in-out infinite 0.44s; }
 
-.ai-shimmer {
+/* .ai-shimmer {
   background: linear-gradient(90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 100%);
   background-size: 200% 100%;
   animation: shimmer 2.2s linear infinite;
-}
+} */
 
 .font-display { font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-weight: 700; }
 

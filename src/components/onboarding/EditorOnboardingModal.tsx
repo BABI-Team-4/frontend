@@ -17,11 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const STORAGE_KEY = "editor_onboarding_seen_v1";
 const STEP_FRAMES = [0, 120, 240];
 const STEP_DURATION = 120;
 const stepLabels = ["입력", "정리", "첨삭"];
+const stepDescriptions = [
+  "자소서를 붙여넣거나 파일을 업로드하세요",
+  "문항별로 자동 분리됩니다",
+  "AI가 즉시 첨삭 결과를 보여드려요",
+];
 
 export default function EditorOnboardingModal() {
   const [open, setOpen] = useState(false);
@@ -72,21 +78,30 @@ export default function EditorOnboardingModal() {
       if (!nextOpen) close();
       else setOpen(true);
     }}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-[calc(100%-2rem)] overflow-y-auto rounded-3xl p-0 sm:max-w-5xl" showCloseButton={false}>
-        <div className="bg-white">
-          <DialogHeader className="px-6 pt-5 pb-3">
-            <div className="mb-2 w-fit rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-500">
-              처음 오셨나요?
-            </div>
-            <DialogTitle className="text-2xl font-black tracking-[-0.04em] text-black">
+      <DialogContent
+        className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-hidden rounded-2xl p-0 sm:max-w-3xl"
+        showCloseButton={false}
+      >
+        <div className="flex flex-col overflow-hidden">
+          {/* Header */}
+          <DialogHeader className="relative px-5 pt-5 pb-4 sm:px-6">
+            <button
+              type="button"
+              onClick={close}
+              className="absolute top-4 right-4 rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <DialogTitle className="text-lg font-bold tracking-tight text-black sm:text-xl">
               자소서 첨삭은 이렇게 진행돼요
             </DialogTitle>
             <DialogDescription className="text-sm text-neutral-500">
-              붙여넣기부터 결과 확인까지 10초만에 흐름을 훑어보세요.
+              붙여넣기부터 결과 확인까지, 3단계로 끝나요.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mx-6 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 shadow-inner">
+          {/* Video */}
+          <div className="mx-5 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50 sm:mx-6">
             <Player
               ref={playerRef}
               component={EditorOnboardingVideo}
@@ -98,49 +113,67 @@ export default function EditorOnboardingModal() {
               autoPlay={false}
               loop={false}
               controls={false}
-              style={{ width: "100%" }}
+              style={{ width: "100%", aspectRatio: `${EDITOR_ONBOARDING_WIDTH}/${EDITOR_ONBOARDING_HEIGHT}` }}
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-6 py-4">
-            <button
-              type="button"
-              onClick={close}
-              className="text-sm font-medium text-neutral-400 transition-colors hover:text-neutral-600"
-            >
-              다시 보지 않기
-            </button>
-            <div className="hidden items-center gap-1 sm:flex">
+          {/* Step indicator + description */}
+          <div className="px-5 pt-4 sm:px-6">
+            <div className="flex items-center gap-2 mb-1.5">
               {stepLabels.map((label, index) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => goToStep(index)}
-                  className="h-2.5 rounded-full transition-all"
-                  style={{
-                    width: index === step ? 28 : 10,
-                    background: index === step ? "#111827" : "#d4d4d4",
-                  }}
-                  aria-label={`${label} 단계로 이동`}
-                />
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                    index === step
+                      ? "bg-black text-white"
+                      : "bg-neutral-100 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-600"
+                  }`}
+                >
+                  <span>{index + 1}</span>
+                  <span>{label}</span>
+                </button>
               ))}
             </div>
+            <p className="text-sm text-neutral-500">{stepDescriptions[step]}</p>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-5 py-4 sm:px-6">
+            <button
+              type="button"
+              onClick={close}
+              className="text-xs text-neutral-400 transition-colors hover:text-neutral-600"
+            >
+              다시 보지 않기
+            </button>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => goToStep(step - 1)}
                 disabled={step === 0}
-                className="rounded-full px-5"
+                className="rounded-full h-8 w-8 p-0"
               >
-                이전
+                <ChevronLeft className="h-4 w-4" />
               </Button>
               {step < stepLabels.length - 1 ? (
-                <Button type="button" onClick={() => goToStep(step + 1)} className="rounded-full px-5">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => goToStep(step + 1)}
+                  className="rounded-full px-4 h-8"
+                >
                   다음
                 </Button>
               ) : (
-                <Button onClick={close} className="rounded-full px-5">
+                <Button
+                  size="sm"
+                  onClick={close}
+                  className="rounded-full px-4 h-8"
+                >
                   시작하기
                 </Button>
               )}

@@ -207,7 +207,7 @@ export default function EditorInner() {
             results[i] = data.data;
             setAdviseResults([...results]);
             if (createdSessionId) {
-              chat.saveAdviseResult(createdSessionId, i, q.question, data.data).catch(() => {});
+              chat.saveAdviseResult(createdSessionId, i, q.question, data.data).catch(() => { });
             }
           } else {
             results[i] = "failed";
@@ -250,7 +250,7 @@ export default function EditorInner() {
           return next;
         });
         if (sessionId) {
-          chat.saveAdviseResult(sessionId, idx, q.question, data.data).catch(() => {});
+          chat.saveAdviseResult(sessionId, idx, q.question, data.data).catch(() => { });
         }
       } else {
         setAdviseResults((prev) => {
@@ -288,12 +288,18 @@ export default function EditorInner() {
         .tdot:nth-child(2){animation-delay:0.18s;}
         .tdot:nth-child(3){animation-delay:0.36s;}
         textarea{resize:none;}
+        @keyframes gradientMove {
+          0%{background-position:0% 0%;}
+          50%{background-position:100% 100%;}
+          100%{background-position:0% 0%;}
+        }
+  
       `}</style>
 
-      <div className="flex h-[var(--app-viewport-height)] overflow-hidden bg-[linear-gradient(135deg,white_40%,rgb(250,245,255)_50%,white_60%)] flex-col lg:flex-row">
+      <div className="flex h-[var(--app-viewport-height)] overflow-hidden flex-col lg:flex-row">
         <MobileHeader />
         <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0 relative">
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 relative">
           {step === "paste" && <EditorOnboardingModal />}
 
           {step === "paste" && (

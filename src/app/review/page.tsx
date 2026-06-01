@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Sidebar from "@/components/Sidebar";
+import MobileHeader from "@/components/MobileHeader";
 import { useAuth } from "@/lib/auth-context";
 import { analysis, type AnalysisResult } from "@/lib/api";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -83,7 +84,8 @@ function ReviewInner() {
 
   if (status === "polling" || status === "idle") {
     return (
-      <div className="flex h-[var(--app-viewport-height)] overflow-hidden">
+      <div className="flex flex-col lg:flex-row h-[var(--app-viewport-height)] overflow-hidden">
+        <MobileHeader />
         <Sidebar />
         <main className="flex-1 flex items-center justify-center bg-neutral-50">
           <motion.div
@@ -117,7 +119,8 @@ function ReviewInner() {
 
   if (status === "error" || !result) {
     return (
-      <div className="flex h-[var(--app-viewport-height)] overflow-hidden">
+      <div className="flex flex-col lg:flex-row h-[var(--app-viewport-height)] overflow-hidden">
+        <MobileHeader />
         <Sidebar />
         <main className="flex-1 flex items-center justify-center bg-neutral-50">
           <div className="text-center">
@@ -147,31 +150,31 @@ function ReviewInner() {
     <div className="flex h-[var(--app-viewport-height)] overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto bg-neutral-50">
-        <header className="sticky top-0 z-10 px-8 py-4 border-b flex items-center justify-between bg-white border-neutral-200">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-10 px-4 md:px-8 py-4 border-b flex items-center justify-between bg-white border-neutral-200">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
             <Link href="/editor">
-              <button className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-black transition-colors">
-                <ArrowLeft className="w-4 h-4" /> 에디터로
+              <button className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-black transition-colors flex-shrink-0">
+                <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">에디터로</span>
               </button>
             </Link>
-            <span className="text-neutral-300">/</span>
-            <span className="text-sm font-bold text-black">AI 첨삭 결과</span>
-            <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-neutral-100 text-neutral-700">
+            <span className="text-neutral-300 hidden sm:inline">/</span>
+            <span className="text-sm font-bold text-black truncate">AI 첨삭 결과</span>
+            <span className="hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-neutral-100 text-neutral-700 flex-shrink-0">
               <CheckCircle2 className="w-3 h-3" /> 첨삭 완료
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={handleCopy} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors">
               {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "복사됨!" : "피드백 복사"}
+              <span className="hidden sm:inline">{copied ? "복사됨!" : "피드백 복사"}</span>
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors">
+            <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-colors">
               <Download className="w-3.5 h-3.5" /> PDF 저장
             </button>
           </div>
         </header>
 
-        <div className="p-8 grid grid-cols-3 gap-6">
+        <div className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-5">
             <Card className="border-0 shadow-none overflow-hidden" style={{ background: "#0f172a" }}>
               <CardContent className="p-6 text-center">
@@ -266,7 +269,7 @@ function ReviewInner() {
             </Card>
           </div>
 
-          <div className="col-span-2 space-y-5">
+          <div className="lg:col-span-2 space-y-5">
             <Card className="border border-neutral-200 shadow-none">
               <CardHeader className="pb-3">
                 <h3 className="font-bold text-sm text-black">자소서 피드백</h3>
@@ -346,7 +349,7 @@ function ReviewInner() {
             )}
 
             <Card className="border border-neutral-200 shadow-none bg-neutral-50">
-              <CardContent className="p-5 flex items-center justify-between">
+              <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <h4 className="font-semibold text-sm mb-1 text-black">합격 자소서와 더 비교해보세요</h4>
                   <p className="text-xs text-neutral-500">유사도 분석 페이지에서 더 많은 합격 자소서를 확인하세요</p>

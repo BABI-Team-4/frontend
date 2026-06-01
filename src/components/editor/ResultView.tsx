@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useCopy } from "@/lib/hooks";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export interface ParsedQuestion {
   question: string;
@@ -484,6 +485,46 @@ export default function ResultView({
             )}
           </div>
         </div>
+      </div>
+
+      {/* 모바일: AI 분석 플로팅 버튼 + 바텀시트 */}
+      <div className="lg:hidden fixed bottom-6 right-4 z-30">
+        <Sheet>
+          <SheetTrigger
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-xs font-semibold shadow-lg active:scale-95 transition-transform"
+            style={{ background: "#2563eb" }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            분석 Q{activeQ + 1}
+          </SheetTrigger>
+          <SheetContent side="bottom" showCloseButton={false} className="max-h-[75vh] rounded-t-2xl pt-10 px-0 pb-0">
+            <div className="flex items-center justify-between px-5 pb-3 border-b border-neutral-100">
+              <span className="text-sm font-bold text-black">분석 — Q{activeQ + 1}</span>
+              <div className="flex gap-1">
+                {parsedQuestions.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveQ(i)}
+                    className="w-7 h-7 rounded-full text-[11px] font-bold transition-colors"
+                    style={{
+                      background: activeQ === i ? "#2563eb" : "#f5f5f5",
+                      color: activeQ === i ? "white" : "#a3a3a3",
+                    }}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-y-auto px-5 py-4" style={{ maxHeight: "calc(75vh - 60px)" }}>
+              <AnalysisSection
+                idx={activeQ}
+                result={adviseResults[activeQ] ?? null}
+                onRefClick={setSelectedRef}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <ReferenceModal
