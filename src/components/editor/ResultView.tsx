@@ -7,6 +7,7 @@ import {
   Copy, Check, Loader2, ClipboardList, RefreshCw, AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { useCopy } from "@/lib/hooks";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -271,6 +272,72 @@ function AnalysisSection({
   );
 }
 
+/* ── LinkedIn 현업자 프로필 ── */
+interface LinkedInProfile {
+  title: string;
+  link: string;
+  snippet: string;
+}
+
+function LinkedInSection({ company, position }: { company: string; position: string }) {
+  const [profiles, setProfiles] = useState<LinkedInProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!company) return;
+    setLoading(true);
+    setError(false);
+    const params = new URLSearchParams({ company });
+    if (position) params.set("position", position);
+    fetch(`/api/proxy/linkedin-search?${params}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setProfiles(d.data ?? []);
+        else setError(true);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [company, position]);
+
+  if (!company) return null;
+
+  return (
+    <div className="border border-neutral-200 rounded-lg bg-white overflow-hidden">
+      <div className="px-3 pt-2.5 pb-2">
+        <div className="flex items-center gap-1.5 mb-2">
+          <ExternalLink className="w-3.5 h-3.5 text-[#0A66C2]" />
+          <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">현업자 프로필</p>
+        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="w-3.5 h-3.5 text-neutral-300 animate-spin" />
+          </div>
+        ) : error ? (
+          <p className="text-[11px] text-neutral-400 py-2">프로필을 불러올 수 없습니다</p>
+        ) : profiles.length === 0 ? (
+          <p className="text-[11px] text-neutral-400 py-2">검색 결과가 없습니다</p>
+        ) : (
+          <div className="space-y-2">
+            {profiles.map((p, i) => (
+              <a
+                key={i}
+                href={p.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-md px-1 py-1.5 -mx-1 hover:bg-neutral-50 transition-colors"
+              >
+                <p className="text-[11px] font-semibold text-neutral-700 truncate">{p.title.replace(/ \| LinkedIn$/, "")}</p>
+                <p className="text-[10px] text-neutral-400 line-clamp-2">{p.snippet}</p>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type Reference = AdviseResult["references"][number];
 
 function ReferenceModal({ reference: r, open, onClose }: { reference: Reference | null; open: boolean; onClose: () => void }) {
@@ -468,6 +535,11 @@ export default function ResultView({
           className="hidden lg:block w-[320px] flex-shrink-0 border-l border-neutral-200 bg-white overflow-y-auto"
         >
           <div className="px-4 py-6">
+            {/* LinkedIn 현업자 프로필 */}
+            <div className="mb-6">
+              <LinkedInSection company={company} position={position} />
+            </div>
+
             {parsedQuestions.length === 0 ? (
               <div className="flex items-center justify-center h-40">
                 <Loader2 className="w-4 h-4 text-neutral-300 animate-spin" />
