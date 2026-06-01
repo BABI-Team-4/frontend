@@ -16,6 +16,7 @@ import {
   LogOut,
   PenSquare,
   Settings2,
+  Trash2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -76,8 +77,11 @@ export default function Sidebar() {
     chat.listSessions(page, PAGE_SIZE).then((res) => {
       if (cancelled) return;
       if (res.success) {
-        setSessions((prev) => page === 1 ? res.data.items : [...prev, ...res.data.items]);
+        const newItems = res.data.items;
+        setSessions((prev) => page === 1 ? newItems : [...prev, ...newItems]);
         setTotal(res.data.total);
+        // 빈 페이지가 오면 더 이상 로드하지 않도록
+        if (newItems.length === 0) setTotal((prev) => Math.min(prev, page === 1 ? 0 : (page - 1) * PAGE_SIZE));
       }
       setLoadingSessions(false);
       setIsFetchingMore(false);
@@ -178,22 +182,40 @@ export default function Sidebar() {
                   {group.items.map((session) => {
                     const isActive = pathname.startsWith("/editor") && activeSessionId === session.session_id;
                     return (
-                      <button
+                      <div
                         key={session.session_id}
-                        onClick={() => router.push(`/editor?session=${session.session_id}`)}
-                        className="w-full rounded-lg px-2.5 py-2 text-left transition-colors"
+                        className="group relative rounded-lg transition-colors"
                         style={{
                           background: isActive ? "#eff6ff" : "transparent",
                           border: isActive ? "1px solid #bfdbfe" : "1px solid transparent",
                         }}
                       >
-                        <div className="truncate text-sm font-medium text-neutral-800">
-                          {session.title || "제목 없는 자소서"}
-                        </div>
-                        <div className="mt-1 truncate text-xs leading-relaxed text-neutral-400">
-                          {session.last_message || "저장된 미리보기가 없습니다."}
-                        </div>
-                      </button>
+                        <button
+                          onClick={() => router.push(`/editor?session=${session.session_id}`)}
+                          className="w-full rounded-lg px-2.5 py-2 text-left"
+                        >
+                          <div className="truncate text-sm font-medium text-neutral-800 pr-6">
+                            {session.title || "제목 없는 자소서"}
+                          </div>
+                          <div className="mt-1 truncate text-xs leading-relaxed text-neutral-400">
+                            {session.last_message || "저장된 미리보기가 없습니다."}
+                          </div>
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const res = await chat.deleteSession(session.session_id);
+                            if (res.success) {
+                              setSessions((prev) => prev.filter((s) => s.session_id !== session.session_id));
+                              setTotal((prev) => Math.max(0, prev - 1));
+                              if (isActive) router.push("/editor");
+                            }
+                          }}
+                          className="absolute right-2 top-2 hidden group-hover:flex w-6 h-6 items-center justify-center rounded hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-neutral-400 hover:text-red-500" />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>

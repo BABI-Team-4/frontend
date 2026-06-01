@@ -66,6 +66,7 @@ export default function EditorInner() {
         if (res.success) {
           setSessionId(res.data.session_id);
           setCompany(res.data.context.target_company_name ?? "");
+          setPosition(res.data.context.target_job_role_name ?? "");
           // 에세이 컨텍스트에서 전체 문항 복원
           const ctx = res.data.context;
           let allQuestions: ParsedQuestion[] = [];
@@ -176,7 +177,7 @@ export default function EditorInner() {
       : company.trim() || "새 자소서";
 
     let createdSessionId: string | null = null;
-    const sessionRes = await chat.createSession(sessionTitle);
+    const sessionRes = await chat.createSession(sessionTitle, company.trim(), position.trim());
     if (sessionRes.success) {
       createdSessionId = sessionRes.data.session_id;
       activeAdviseSessionRef.current = createdSessionId;
