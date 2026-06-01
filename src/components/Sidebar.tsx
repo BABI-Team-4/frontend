@@ -80,7 +80,6 @@ export default function Sidebar() {
         const newItems = res.data.items;
         setSessions((prev) => page === 1 ? newItems : [...prev, ...newItems]);
         setTotal(res.data.total);
-        // 빈 페이지가 오면 더 이상 로드하지 않도록
         if (newItems.length === 0) setTotal((prev) => Math.min(prev, page === 1 ? 0 : (page - 1) * PAGE_SIZE));
       }
       setLoadingSessions(false);
